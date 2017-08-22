@@ -6,7 +6,7 @@ Migration tool to migrate from a RSS/Atom Feed to [Hugo](https://gohugo.io/) sta
 
 * Python 3+ (not tested with Python 2)
 * Feedparser
-* Slugigy
+* Slugify
 
 ```
 pip install -r requirements.txt
