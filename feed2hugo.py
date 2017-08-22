@@ -1,6 +1,7 @@
 import feedparser
 import os, sys
 from argparse import ArgumentParser
+from slugify import slugify
 
 def main():
     #
@@ -77,17 +78,21 @@ def main():
                 tags.append(tag['term'])
         content = entry.content[0].value
         contenttype = DEFAULT_CONTENT_TYPE
-        filetitle = "%s.html" % link.split('/')[-1:][0]
-        print(filetitle)
-        print('---')
-        print('date: %s' % date)
-        print('title: %s' % title)
-        print('url: %s' % link)
-        print('tags: [%s]' % '", "'.join(tags))
-        print('lastmod: %s' % lastmod)
-        print('type: %s' % contenttype)
-        print('---')
-        print(content)
+        filetitle = "%s.html" % slugify(entry.title)
+        full_dest_path = "%s/%s" % (dest_path, filetitle)
+
+        output = open(full_dest_path, 'w')
+        output.write('---\n')
+        output.write('date: %s\n' % date)
+        output.write('title: "%s"\n' % title.replace('"','\''))
+        output.write('author: %s\n' % author)
+        output.write('previous_url: %s\n' % link)
+        output.write('tags: ["%s"] \n' % '", "'.join(tags))
+        output.write('lastmod: %s\n' % lastmod)
+        output.write('type: %s\n' % contenttype)
+        output.write('---\n')
+        output.write(content)
+        output.close()
 
     #
     ## RSS Case - to implement ?
