@@ -33,3 +33,8 @@ or:
 ```
 python feed2hugo.py -f http://www.domain.com/blog/feed -t /home/user/path/to/hugo -c blogpost
 ```
+
+## To do
+
+* Convert html markup to markdown ?
+* Check if RSS feeds are managed too ; implement it if necessary
