@@ -13,12 +13,9 @@ pip install feedparser
 
 ## Usage
 
-Ajust settings in `settings.py`
-
 Run :
 
 ```
-python feed2hugo.py
+python feed2hugo.py -f <url_or_path_to_feed> -t <hugo_root_path> [-c post]
 ```
-
-
+Specify value for `-c` only if your content type is not `post`.
