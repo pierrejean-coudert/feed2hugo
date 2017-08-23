@@ -78,7 +78,7 @@ def main():
                 tags.append(tag['term'])
         content = entry.content[0].value
         contenttype = DEFAULT_CONTENT_TYPE
-        filetitle = "%s.html" % slugify(entry.title)
+        filetitle = "%s-%s.html" % (entry.published[:10], slugify(entry.title))
         full_dest_path = "%s/%s" % (dest_path, filetitle)
 
         output = open(full_dest_path, 'w')
