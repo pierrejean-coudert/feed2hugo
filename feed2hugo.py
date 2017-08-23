@@ -87,7 +87,8 @@ def main():
         output.write('title: "%s"\n' % title.replace('"','\''))
         output.write('author: %s\n' % author)
         output.write('previous_url: %s\n' % link)
-        output.write('tags: ["%s"] \n' % '", "'.join(tags))
+        if 'tags' in entry:
+            output.write('tags: ["%s"] \n' % '", "'.join(tags))
         output.write('lastmod: %s\n' % lastmod)
         output.write('type: %s\n' % contenttype)
         output.write('---\n')
