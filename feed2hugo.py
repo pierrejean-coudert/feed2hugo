@@ -1,5 +1,5 @@
 import feedparser
-import os, sys
+import os, sys, re
 from argparse import ArgumentParser
 from slugify import slugify
 from markdownify import markdownify as md
@@ -65,10 +65,13 @@ def main():
     #
     ## Atom Case
     #
-
+    p = re.compile('https?:\/\/[a-z.]+')
     for entry in f.entries:
         title = entry.title
-        link = entry.link
+
+        baseUrl = p.match(entry.link).group(0)
+        link = entry.link[len(baseUrl):]
+
         date = entry.published
         if "updated" in entry:
             lastmod = entry.updated
@@ -88,7 +91,7 @@ def main():
         output.write('date: %s\n' % date)
         output.write('title: "%s"\n' % title.replace('"','\''))
         output.write('author: %s\n' % author)
-        output.write('previous_url: %s\n' % link)
+        output.write('alias: ["%s"]\n' % link)
         if 'tags' in entry:
             output.write('tags: ["%s"] \n' % '", "'.join(tags))
         if 'updated' in entry:
