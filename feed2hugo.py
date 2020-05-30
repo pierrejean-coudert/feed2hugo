@@ -2,6 +2,7 @@ import feedparser
 import os, sys
 from argparse import ArgumentParser
 from slugify import slugify
+from markdownify import markdownify as md
 
 def main():
     #
@@ -76,9 +77,10 @@ def main():
             tags = []
             for tag in entry.tags:
                 tags.append(tag['term'])
-        content = entry.content[0].value
+        if 'content' in entry:
+            content = entry.content[0].value
         contenttype = DEFAULT_CONTENT_TYPE
-        filetitle = "%s-%s.html" % (entry.published[:10], slugify(entry.title))
+        filetitle = "%s.md" % (slugify(entry.title))
         full_dest_path = "%s/%s" % (dest_path, filetitle)
 
         output = open(full_dest_path, 'w')
@@ -89,10 +91,11 @@ def main():
         output.write('previous_url: %s\n' % link)
         if 'tags' in entry:
             output.write('tags: ["%s"] \n' % '", "'.join(tags))
-        output.write('lastmod: %s\n' % lastmod)
+        if 'updated' in entry:
+            output.write('lastmod: %s\n' % lastmod)
         output.write('type: %s\n' % contenttype)
         output.write('---\n')
-        output.write(content)
+        output.write(md(content))
         output.close()
 
     #
