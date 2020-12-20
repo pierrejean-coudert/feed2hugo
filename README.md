@@ -9,6 +9,8 @@ Migration tool to migrate from a RSS/Atom Feed to [Hugo](https://gohugo.io/) sta
 * Slugify
 
 ```
+python3 -m venv .venv 
+source ./.venv/bin/activate
 pip install -r requirements.txt
 ```
 

@@ -1,15 +1,88 @@
-import feedparser
 import os, sys, re
 from argparse import ArgumentParser
+import feedparser
+import shutil
 from slugify import slugify
 from markdownify import markdownify as md
+from bs4 import BeautifulSoup as bs
+import requests
 
-def main():
-    #
-    ## Command line parser
-    #
+def dump_images(html, dest):
+    """Downloads images referenced by html to dest path"""
+    soup = bs(html, features="html.parser")
+    links = dict()
+    for image in soup.findAll("img"):
+        filename = image["src"].split("/")[-1]
+        outpath = os.path.join(dest, filename)
+        url = image["src"]
+        links[url] = filename
+        if not os.path.exists(outpath):
+            r = requests.get(url, stream=True)
+            if r.status_code == 200:
+                with open(outpath, 'wb') as f:
+                    r.raw.decode_content = True
+                    shutil.copyfileobj(r.raw, f) 
+            else:
+                print(r.status_code, "error loading", url)            
+    return links
 
-    parser = ArgumentParser(description='Submit dataTasks or dataFlows to Queue')
+def feed_to_hugo(FEED_URL, HUGO_ROOT_PATH, DEFAULT_CONTENT_TYPE):
+    f = feedparser.parse(FEED_URL)
+
+    # Todo: Check if ATOM or RSS, RSS Case - to implement 
+
+    # Atom Case
+    p = re.compile('https?:\/\/[a-z.]+')
+    for entry in f.entries:
+        title = entry.title
+
+        baseUrl = p.match(entry.link).group(0)
+        link = entry.link[len(baseUrl):]
+           
+        if "updated" in entry:
+            lastmod = entry.updated
+
+        if "published" in entry:
+            date = entry.published
+        elif "updated" in entry:
+            date = entry.updated
+
+        author = entry.author
+        tags = [t['term'] for t in entry.tags]
+
+        content = None
+        if 'content' in entry:
+            content = entry.content[0].value
+
+        contenttype = DEFAULT_CONTENT_TYPE
+
+        dest_path = os.path.join(HUGO_ROOT_PATH, 'content', DEFAULT_CONTENT_TYPE, slugify(entry.title))
+        if not os.path.exists(dest_path):
+            os.makedirs(dest_path)
+
+        with open(os.path.join(dest_path, "index.md"), 'w') as f:
+            f.write('---\n')
+            f.write(f'date: {date}\n')
+            f.write('title: "%s"\n' % title.replace('"','\''))
+            f.write(f'author: {author}\n')
+            f.write(f'alias: ["{link}"]\n')
+            if tags:
+                f.write('tags: ["%s"] \n' % '", "'.join(tags))
+            if 'updated' in entry:
+                f.write(f'lastmod: {lastmod}\n')
+            f.write(f'type: {contenttype}\n')
+            f.write('---\n')
+            if content:
+                links = dump_images(content, dest_path)
+                md_content = md(content)
+                # replace ilmage links with local image references
+                for link, filename in links.items():
+                    md_content = md_content.replace(link, filename)
+                f.write(md_content)
+
+
+if __name__ == '__main__':
+    parser = ArgumentParser(description='Parse RSS/ATOM feed to generate Hugo blog')
     parser.add_argument('-f', '--feed',
                         required=True,
                         dest='feed',
@@ -24,86 +97,4 @@ def main():
                         help='project file')
     args = parser.parse_args()
 
-    try:
-        HUGO_ROOT_PATH = args.target    
-    except ValueError:
-        sys.exit("Hugo root path not defined with -t or --target")
-
-    try:
-        FEED_URL = args.feed
-    except ValueError:
-        sys.exit("Feed URL or path to feed not defined with -f or --feed")
-
-    try:
-        DEFAULT_CONTENT_TYPE = args.contenttype
-    except ValueError:
-        sys.exit("Hugo root path not defined with -c or --contenttype")
-
-    #
-    ## CHECK DESTINATION PATH EXISTENCE
-    #
-
-    dest_path = "%s/content/%s" % (HUGO_ROOT_PATH, DEFAULT_CONTENT_TYPE)
-
-    if os.path.exists(dest_path) is False:
-        print("The folder %s does not exist" % dest_path)
-        os.makedirs(dest_path)
-        print("The folder %s has been created ..." % dest_path)
-    else:
-        pass
-
-    #
-    ## PARSE FEED
-    #
-
-    f = feedparser.parse(FEED_URL)
-
-    #
-    ## Check if ATOM or RSS ?
-    #
-
-    #
-    ## Atom Case
-    #
-    p = re.compile('https?:\/\/[a-z.]+')
-    for entry in f.entries:
-        title = entry.title
-
-        baseUrl = p.match(entry.link).group(0)
-        link = entry.link[len(baseUrl):]
-
-        date = entry.published
-        if "updated" in entry:
-            lastmod = entry.updated
-        author = entry.author
-        if 'tags' in entry:
-            tags = []
-            for tag in entry.tags:
-                tags.append(tag['term'])
-        if 'content' in entry:
-            content = entry.content[0].value
-        contenttype = DEFAULT_CONTENT_TYPE
-        filetitle = "%s.md" % (slugify(entry.title))
-        full_dest_path = "%s/%s" % (dest_path, filetitle)
-
-        output = open(full_dest_path, 'w')
-        output.write('---\n')
-        output.write('date: %s\n' % date)
-        output.write('title: "%s"\n' % title.replace('"','\''))
-        output.write('author: %s\n' % author)
-        output.write('alias: ["%s"]\n' % link)
-        if 'tags' in entry:
-            output.write('tags: ["%s"] \n' % '", "'.join(tags))
-        if 'updated' in entry:
-            output.write('lastmod: %s\n' % lastmod)
-        output.write('type: %s\n' % contenttype)
-        output.write('---\n')
-        output.write(md(content))
-        output.close()
-
-    #
-    ## RSS Case - to implement ?
-    #
-
-if __name__ == '__main__':
-    main()
+    feed_to_hugo(args.feed, args.target, args.contenttype)
