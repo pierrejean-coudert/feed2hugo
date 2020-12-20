@@ -2,6 +2,12 @@
 
 Migration tool to migrate from a RSS/Atom Feed to [Hugo](https://gohugo.io/) static site generator.
 
+Forked from https://code.cerenit.fr/nsteinmetz/feed2hugo 
+
+Improvement:
+- download all post images
+- store each post & related images in a dedicated directory. Adapt images src in post's markdown.
+
 ## Requirements
 
 * Python 3+ (not tested with Python 2)
@@ -36,7 +42,3 @@ or:
 python feed2hugo.py -f http://www.domain.com/blog/feed -t /home/user/path/to/hugo -c blogpost
 ```
 
-## To do
-
-* Convert html markup to markdown ?
-* Check if RSS feeds are managed too ; implement it if necessary

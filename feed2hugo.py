@@ -12,18 +12,21 @@ def dump_images(html, dest):
     soup = bs(html, features="html.parser")
     links = dict()
     for image in soup.findAll("img"):
-        filename = image["src"].split("/")[-1]
+        filename = image["src"].split("/")[-1].replace(" ", "_")
         outpath = os.path.join(dest, filename)
         url = image["src"]
         links[url] = filename
         if not os.path.exists(outpath):
-            r = requests.get(url, stream=True)
-            if r.status_code == 200:
-                with open(outpath, 'wb') as f:
-                    r.raw.decode_content = True
-                    shutil.copyfileobj(r.raw, f) 
-            else:
-                print(r.status_code, "error loading", url)            
+            try:
+                r = requests.get(url, stream=True)
+                if r.status_code == 200:
+                    with open(outpath, 'wb') as f:
+                        r.raw.decode_content = True
+                        shutil.copyfileobj(r.raw, f) 
+                else:
+                    print(r.status_code, "error loading", url)  
+            except Exception as e:          
+                    print(e, url)  
     return links
 
 def feed_to_hugo(FEED_URL, HUGO_ROOT_PATH, DEFAULT_CONTENT_TYPE):
