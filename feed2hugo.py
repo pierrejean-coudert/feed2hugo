@@ -7,34 +7,38 @@ from markdownify import markdownify as md
 from bs4 import BeautifulSoup as bs
 import requests
 
+def download_image(url, image_path):
+    try:
+        r = requests.get(url, stream=True)
+        if r.status_code == 200:
+            with open(image_path, 'wb') as f:
+                r.raw.decode_content = True
+                shutil.copyfileobj(r.raw, f) 
+        else:
+            print(r.status_code, "error loading", url)  
+    except Exception as e:          
+            print(e, url)  
+
 def dump_images(html, dest):
-    """Downloads images referenced by html to dest path"""
+    """
+    Downloads images referenced by html to dest path
+    returns a dict {"image_src_url_in_html": "image_filename"}
+    """
     soup = bs(html, features="html.parser")
+
     links = dict()
     for image in soup.findAll("img"):
-        filename = image["src"].split("/")[-1].replace(" ", "_")
-        outpath = os.path.join(dest, filename)
         url = image["src"]
+        filename = url.split("/")[-1].replace(" ", "_")
+        image_path = os.path.join(dest, filename)
         links[url] = filename
-        if not os.path.exists(outpath):
-            try:
-                r = requests.get(url, stream=True)
-                if r.status_code == 200:
-                    with open(outpath, 'wb') as f:
-                        r.raw.decode_content = True
-                        shutil.copyfileobj(r.raw, f) 
-                else:
-                    print(r.status_code, "error loading", url)  
-            except Exception as e:          
-                    print(e, url)  
+        if not os.path.exists(image_path):
+            download_image(url, image_path)
+
     return links
 
-def feed_to_hugo(FEED_URL, HUGO_ROOT_PATH, DEFAULT_CONTENT_TYPE):
-    f = feedparser.parse(FEED_URL)
-
-    # Todo: Check if ATOM or RSS, RSS Case - to implement 
-
-    # Atom Case
+def feed_to_hugo(feed_url, hugo_root_path, content_type):
+    f = feedparser.parse(feed_url)
     p = re.compile('https?:\/\/[a-z.]+')
     for entry in f.entries:
         title = entry.title
@@ -57,13 +61,12 @@ def feed_to_hugo(FEED_URL, HUGO_ROOT_PATH, DEFAULT_CONTENT_TYPE):
         if 'content' in entry:
             content = entry.content[0].value
 
-        contenttype = DEFAULT_CONTENT_TYPE
-
-        dest_path = os.path.join(HUGO_ROOT_PATH, 'content', DEFAULT_CONTENT_TYPE, slugify(entry.title))
+        dest_path = os.path.join(hugo_root_path, 'content', content_type, slugify(entry.title))
         if not os.path.exists(dest_path):
             os.makedirs(dest_path)
 
         with open(os.path.join(dest_path, "index.md"), 'w') as f:
+            # front matter
             f.write('---\n')
             f.write(f'date: {date}\n')
             f.write('title: "%s"\n' % title.replace('"','\''))
@@ -73,12 +76,14 @@ def feed_to_hugo(FEED_URL, HUGO_ROOT_PATH, DEFAULT_CONTENT_TYPE):
                 f.write('tags: ["%s"] \n' % '", "'.join(tags))
             if 'updated' in entry:
                 f.write(f'lastmod: {lastmod}\n')
-            f.write(f'type: {contenttype}\n')
+            f.write(f'type: {content_type}\n')
             f.write('---\n')
+
+            # build markdown content
             if content:
                 links = dump_images(content, dest_path)
                 md_content = md(content)
-                # replace ilmage links with local image references
+                # replace images sources with local images references
                 for link, filename in links.items():
                     md_content = md_content.replace(link, filename)
                 f.write(md_content)
@@ -95,9 +100,9 @@ if __name__ == '__main__':
                         dest='target',
                         help='Root path for Hugo project')
     parser.add_argument('-c', '--contenttype',
-                        dest='contenttype',
+                        dest='content_type',
                         default='post',
                         help='project file')
     args = parser.parse_args()
 
-    feed_to_hugo(args.feed, args.target, args.contenttype)
+    feed_to_hugo(args.feed, args.target, args.content_type)

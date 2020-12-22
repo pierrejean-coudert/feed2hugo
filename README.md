@@ -6,13 +6,12 @@ Forked from https://code.cerenit.fr/nsteinmetz/feed2hugo
 
 Improvement:
 - download all post images
-- store each post & related images in a dedicated directory. Adapt images src in post's markdown.
+- store each post & related images in a dedicated directory
+- adapt images src in posts markdown
 
 ## Requirements
 
 * Python 3+ (not tested with Python 2)
-* Feedparser
-* Slugify
 
 ```
 python3 -m venv .venv 
