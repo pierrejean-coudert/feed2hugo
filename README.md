@@ -2,9 +2,11 @@
 
 Migration tool to migrate from a RSS/Atom Feed to [Hugo](https://gohugo.io/) static site generator.
 
+Used to migrate Dotclear 1.2 and 2 blogs to Hugo.
+
 Forked from https://code.cerenit.fr/nsteinmetz/feed2hugo 
 
-Improvement:
+Improvements:
 - download all post images
 - store each post & related images in a dedicated directory
 - adapt images src in posts markdown
