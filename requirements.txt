@@ -12,7 +12,7 @@ bs4==0.0.1
     # via -r requirements.in
 certifi==2023.7.22
     # via requests
-chardet==4.0.0
+charset-normalizer==3.2.0
     # via requests
 feedparser==6.0.2
     # via -r requirements.in
@@ -22,7 +22,7 @@ markdownify==0.6.0
     # via -r requirements.in
 python-slugify==4.0.1
     # via -r requirements.in
-requests==2.25.1
+requests==2.31.0
     # via -r requirements.in
 sgmllib3k==1.0.0
     # via feedparser
